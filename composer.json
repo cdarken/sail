@@ -1,5 +1,5 @@
 {
-    "name": "laravel/sail",
+    "name": "cdarken/sailx",
     "description": "Docker files for running a basic Laravel application.",
     "keywords": ["laravel", "docker"],
     "license": "MIT",
@@ -17,10 +17,11 @@
         "php": "^7.3|^8.0",
         "illuminate/contracts": "^8.0|^9.0",
         "illuminate/console": "^8.0|^9.0",
-        "illuminate/support": "^8.0|^9.0"
+        "illuminate/support": "^8.0|^9.0",
+        "laravel/sail": "^1.0"
     },
     "bin": [
-        "bin/sail"
+        "bin/sailx"
     ],
     "autoload": {
         "psr-4": {
@@ -29,7 +30,8 @@
     },
     "extra": {
         "branch-alias": {
-            "dev-master": "1.x-dev"
+            "dev-master": "1.x-dev",
+            "dev-develop": "2.x-dev"
         },
         "laravel": {
             "providers": [

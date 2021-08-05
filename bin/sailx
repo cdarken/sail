@@ -34,28 +34,6 @@ export SAIL_SHARE_DASHBOARD=${SAIL_SHARE_DASHBOARD:-4040}
 export SAIL_SHARE_SERVER_HOST=${SAIL_SHARE_SERVER_HOST:-"laravel-sail.site"}
 export SAIL_SHARE_SERVER_PORT=${SAIL_SHARE_SERVER_PORT:-8080}
 
-# Ensure that Docker is running...
-if ! docker info > /dev/null 2>&1; then
-    echo -e "${WHITE}Docker is not running.${NC}" >&2
-
-    exit 1
-fi
-
-# Determine if Sail is currently up...
-PSRESULT="$(docker-compose ps -q)"
-
-if docker-compose ps | grep $APP_SERVICE | grep 'Exit'; then
-    echo -e "${WHITE}Shutting down old Sail processes...${NC}" >&2
-
-    docker-compose down > /dev/null 2>&1
-
-    EXEC="no"
-elif [ -n "$PSRESULT" ]; then
-    EXEC="yes"
-else
-    EXEC="no"
-fi
-
 # Function that outputs Sail is not running...
 function sail_is_not_running {
     echo -e "${WHITE}Sail is not running.${NC}" >&2
@@ -65,13 +43,45 @@ function sail_is_not_running {
     exit 1
 }
 
+function docker_compose {
+    local file="docker-compose.yml"
+    [ -n "$DOCKER_COMPOSE_FILE" ] && file="$DOCKER_COMPOSE_FILE"
+    [ -f "$file" ] || { echo "Missing file ${file}"; exit; }
+    docker-compose -f "$file" "$@"
+}
+
+if [ -z "$SKIP_SAIL_CHECKS" ]; then
+    # Ensure that Docker is running...
+    if ! docker info > /dev/null 2>&1; then
+        echo -e "${WHITE}Docker is not running.${NC}" >&2
+
+        exit 1
+    fi
+
+    # Determine if Sail is currently up...
+    PSRESULT="$(docker-compose ps -q)"
+    if docker_compose ps | grep $APP_SERVICE | grep 'Exit'; then
+        echo -e "${WHITE}Shutting down old Sail processes...${NC}" >&2
+
+        docker_compose down > /dev/null 2>&1
+
+        EXEC="no"
+    elif [ -n "$PSRESULT" ]; then
+        EXEC="yes"
+    else
+        EXEC="no"
+    fi
+else
+    EXEC="yes"
+fi
+
 if [ $# -gt 0 ]; then
     # Proxy PHP commands to the "php" binary on the application container...
     if [ "$1" == "php" ]; then
         shift 1
 
         if [ "$EXEC" == "yes" ]; then
-            docker-compose exec \
+            docker_compose exec \
                 -u sail \
                 "$APP_SERVICE" \
                 php "$@"
@@ -84,7 +94,7 @@ if [ $# -gt 0 ]; then
         shift 1
 
         if [ "$EXEC" == "yes" ]; then
-            docker-compose exec \
+            docker_compose exec \
                 -u sail \
                 "$APP_SERVICE" \
                 ./vendor/bin/"$@"
@@ -97,7 +107,7 @@ if [ $# -gt 0 ]; then
         shift 1
 
         if [ "$EXEC" == "yes" ]; then
-            docker-compose exec \
+            docker_compose exec \
                 -u sail \
                 "$APP_SERVICE" \
                 composer "$@"
@@ -110,7 +120,7 @@ if [ $# -gt 0 ]; then
         shift 1
 
         if [ "$EXEC" == "yes" ]; then
-            docker-compose exec \
+            docker_compose exec \
                 -u sail \
                 "$APP_SERVICE" \
                 php artisan "$@"
@@ -137,7 +147,7 @@ if [ $# -gt 0 ]; then
         shift 1
 
         if [ "$EXEC" == "yes" ]; then
-            docker-compose exec \
+            docker_compose exec \
                 -u sail \
                 "$APP_SERVICE" \
                 php artisan test "$@"
@@ -150,7 +160,7 @@ if [ $# -gt 0 ]; then
         shift 1
 
         if [ "$EXEC" == "yes" ]; then
-            docker-compose exec \
+            docker_compose exec \
                 -u sail \
                 -e "APP_URL=http://${APP_SERVICE}" \
                 -e "DUSK_DRIVER_URL=http://selenium:4444/wd/hub" \
@@ -165,7 +175,7 @@ if [ $# -gt 0 ]; then
         shift 1
 
         if [ "$EXEC" == "yes" ]; then
-            docker-compose exec \
+            docker_compose exec \
                 -u sail \
                 -e "APP_URL=http://${APP_SERVICE}" \
                 -e "DUSK_DRIVER_URL=http://selenium:4444/wd/hub" \
@@ -180,7 +190,7 @@ if [ $# -gt 0 ]; then
         shift 1
 
         if [ "$EXEC" == "yes" ]; then
-            docker-compose exec \
+            docker_compose exec \
                 -u sail \
                 "$APP_SERVICE" \
                 php artisan tinker
@@ -193,7 +203,7 @@ if [ $# -gt 0 ]; then
         shift 1
 
         if [ "$EXEC" == "yes" ]; then
-            docker-compose exec \
+            docker_compose exec \
                 -u sail \
                 "$APP_SERVICE" \
                 node "$@"
@@ -206,7 +216,7 @@ if [ $# -gt 0 ]; then
         shift 1
 
         if [ "$EXEC" == "yes" ]; then
-            docker-compose exec \
+            docker_compose exec \
                 -u sail \
                 "$APP_SERVICE" \
                 npm "$@"
@@ -219,7 +229,7 @@ if [ $# -gt 0 ]; then
         shift 1
 
         if [ "$EXEC" == "yes" ]; then
-            docker-compose exec \
+            docker_compose exec \
                 -u sail \
                 "$APP_SERVICE" \
                 npx "$@"
@@ -232,7 +242,7 @@ if [ $# -gt 0 ]; then
         shift 1
 
         if [ "$EXEC" == "yes" ]; then
-            docker-compose exec \
+            docker_compose exec \
                 -u sail \
                 "$APP_SERVICE" \
                 yarn "$@"
@@ -245,7 +255,7 @@ if [ $# -gt 0 ]; then
         shift 1
 
         if [ "$EXEC" == "yes" ]; then
-            docker-compose exec \
+            docker_compose exec \
                 mysql \
                 bash -c 'MYSQL_PWD=${MYSQL_PASSWORD} mysql -u ${MYSQL_USER} ${MYSQL_DATABASE}'
         else
@@ -257,7 +267,7 @@ if [ $# -gt 0 ]; then
         shift 1
 
         if [ "$EXEC" == "yes" ]; then
-            docker-compose exec \
+            docker_compose exec \
                 mariadb \
                 bash -c 'MYSQL_PWD=${MYSQL_PASSWORD} mysql -u ${MYSQL_USER} ${MYSQL_DATABASE}'
         else
@@ -269,7 +279,7 @@ if [ $# -gt 0 ]; then
         shift 1
 
         if [ "$EXEC" == "yes" ]; then
-            docker-compose exec \
+            docker_compose exec \
                  pgsql \
                  bash -c 'PGPASSWORD=${PGPASSWORD} psql -U ${POSTGRES_USER} ${POSTGRES_DB}'
         else
@@ -281,7 +291,7 @@ if [ $# -gt 0 ]; then
         shift 1
 
         if [ "$EXEC" == "yes" ]; then
-            docker-compose exec \
+            docker_compose exec \
                 -u sail \
                 "$APP_SERVICE" \
                 bash "$@"
@@ -294,7 +304,7 @@ if [ $# -gt 0 ]; then
         shift 1
 
         if [ "$EXEC" == "yes" ]; then
-            docker-compose exec \
+            docker_compose exec \
                 "$APP_SERVICE" \
                 bash "$@"
         else
@@ -306,7 +316,7 @@ if [ $# -gt 0 ]; then
         shift 1
 
         if [ "$EXEC" == "yes" ]; then
-            docker-compose exec \
+            docker_compose exec \
                 redis \
                 redis-cli
         else
@@ -330,8 +340,8 @@ if [ $# -gt 0 ]; then
 
     # Pass unknown commands to the "docker-compose" binary...
     else
-        docker-compose "$@"
+        docker_compose "$@"
     fi
 else
-    docker-compose ps
+    docker_compose ps
 fi
