@@ -50,7 +50,7 @@ function docker_compose {
     docker-compose -f "$file" "$@"
 }
 
-if [ -z "$SKIP_SAIL_CHECKS" ]; then
+if [ -z "$SAIL_SKIP_CHECKS" ]; then
     # Ensure that Docker is running...
     if ! docker info > /dev/null 2>&1; then
         echo -e "${WHITE}Docker is not running.${NC}" >&2
@@ -59,7 +59,7 @@ if [ -z "$SKIP_SAIL_CHECKS" ]; then
     fi
 
     # Determine if Sail is currently up...
-    PSRESULT="$(docker-compose ps -q)"
+    PSRESULT="$(docker_compose ps -q)"
     if docker_compose ps | grep $APP_SERVICE | grep 'Exit'; then
         echo -e "${WHITE}Shutting down old Sail processes...${NC}" >&2
 
