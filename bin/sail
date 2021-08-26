@@ -23,6 +23,10 @@ if [ -f ./.env ]; then
     source ./.env
 fi
 
+# If the file .sail is present in the root dir of the project, source it
+PROJECT_DIR="$(realpath $(dirname $(dirname $(dirname "${BASH_SOURCE[0]}"))))"
+[ -f "${PROJECT_DIR}/.sail" ] && source "${PROJECT_DIR}/.sail"
+
 # Define environment variables...
 export APP_PORT=${APP_PORT:-80}
 export APP_SERVICE=${APP_SERVICE:-"laravel.test"}
